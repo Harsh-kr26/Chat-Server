@@ -10,40 +10,51 @@
 -record(state, {users = [], max_users, current_topic = "General", admins = [], 
                 message_history = [], history_size = 5}).
 
+-spec start_link(integer()) -> {ok, pid()} | {error, term()}.
 start_link(MaxUsers) when is_integer(MaxUsers), MaxUsers > 0 ->
     gen_server:start_link({local, ?MODULE}, ?MODULE, [MaxUsers], []).
 
+-spec stop() -> ok.
 stop() ->
     gen_server:stop(?MODULE).
 
+-spec connect(pid(), string()) -> {ok, string()} | {error, string()}.
 connect(Pid, Username) ->
     gen_server:call(?MODULE, {connect, Pid, Username}).
 
+-spec disconnect(string()) -> ok.
 disconnect(Username) ->
     gen_server:cast(?MODULE, {disconnect, Username}).
 
+-spec send_message(string(), string()) -> ok.
 send_message(Username, Msg) ->
     gen_server:cast(?MODULE, {message, Username, Msg}).
 
+-spec send_private_message(string(), string(), string()) -> ok | {error, string()}.
 send_private_message(Sender, Recipient, Msg) ->
     gen_server:call(?MODULE, {private_message, Sender, Recipient, Msg}).
 
+-spec request_user_list(string()) -> ok | {error, atom()}.
 request_user_list(Username) ->
     gen_server:call(?MODULE, {request_user_list, Username}).
 
+-spec change_topic(string(), string()) -> ok.
 change_topic(Username, NewTopic) ->
     gen_server:cast(?MODULE, {change_topic, Username, NewTopic}).
 
+-spec make_admin(string(), string()) -> ok.
 make_admin(AdminUsername, TargetUsername) ->
     gen_server:cast(?MODULE, {make_admin, AdminUsername, TargetUsername}).
 
+-spec remove_admin(string(), string()) -> ok.
 remove_admin(AdminUsername, TargetUsername) ->
     gen_server:cast(?MODULE, {remove_admin, AdminUsername, TargetUsername}).
 
+-spec kick_user(string(), string()) -> ok.
 kick_user(AdminUsername, TargetUsername) ->
     gen_server:cast(?MODULE, {kick_user, AdminUsername, TargetUsername}).
 
-
+-spec get_message_history(string()) -> ok | {error, atom()}.
 get_message_history(Username) ->
     gen_server:call(?MODULE, {get_message_history, Username}).
 
@@ -88,7 +99,7 @@ handle_call({private_message, Sender, Recipient, Msg}, _From, State) ->
         false ->
             {Sender, SenderPid} = lists:keyfind(Sender, 1, Users),
             SenderPid ! {error, "User " ++ Recipient ++ " not found."},
-            {reply, {error, user_not_found}, State}
+            {reply, {error, "Username not found."}, State}
     end;
 
 handle_call({request_user_list, Username}, _From, State) ->
